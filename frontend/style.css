@@ -1,0 +1,442 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+h1 {
+    color: #667eea;
+    font-size: 2em;
+    margin: 0;
+}
+
+h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+h3 {
+    color: #555;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+}
+
+.wallet-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#accountInfo {
+    text-align: right;
+}
+
+#accountInfo p {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+#accountAddress {
+    font-family: monospace;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 30px;
+}
+
+.empty-state h2 {
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.empty-state p {
+    font-size: 1.2em;
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #38a169;
+}
+
+.btn-danger {
+    background: #f56565;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #e53e3e;
+}
+
+.btn-warning {
+    background: #ed8936;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #dd6b20;
+}
+
+.btn-yes {
+    background: #48bb78;
+    color: white;
+    flex: 1;
+}
+
+.btn-yes:hover {
+    background: #38a169;
+}
+
+.btn-no {
+    background: #f56565;
+    color: white;
+    flex: 1;
+}
+
+.btn-no:hover {
+    background: #e53e3e;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#predictionInfo {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+#predictionInfo h3 {
+    color: #667eea;
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
+
+#predictionInfo p {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.volumes {
+    margin: 30px 0;
+    padding: 25px;
+    background: #f7fafc;
+    border-radius: 10px;
+}
+
+.volumes h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #667eea;
+}
+
+.volume-item {
+    margin-bottom: 20px;
+}
+
+.volume-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.yes-label {
+    color: #48bb78;
+    font-size: 1.1em;
+}
+
+.no-label {
+    color: #f56565;
+    font-size: 1.1em;
+}
+
+.volume-value {
+    font-size: 1.2em;
+    color: #333;
+}
+
+.bet-count {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.volume-bar {
+    height: 30px;
+    background: #e0e0e0;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.volume-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 10px;
+    color: white;
+    font-weight: 600;
+}
+
+.volume-fill.yes {
+    background: linear-gradient(90deg, #48bb78, #38a169);
+}
+
+.volume-fill.no {
+    background: linear-gradient(90deg, #f56565, #e53e3e);
+}
+
+.total-pool {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 1.3em;
+    color: #667eea;
+}
+
+.bet-placed {
+    text-align: center;
+    padding: 15px;
+    background: #e6fffa;
+    border: 2px solid #38b2ac;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #234e52;
+}
+
+#bettingSection h3 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#resultSection {
+    text-align: center;
+    padding: 30px;
+    background: #fff5f5;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+#resultSection h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+#resultText {
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.status-message {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 20px 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    display: none;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.status-message.show {
+    display: block;
+}
+
+.status-message.success {
+    border-left: 5px solid #48bb78;
+}
+
+.status-message.error {
+    border-left: 5px solid #f56565;
+}
+
+.status-message.info {
+    border-left: 5px solid #4299e1;
+}
+
+footer {
+    text-align: center;
+    color: white;
+    margin-top: 50px;
+    padding: 20px;
+    font-size: 0.9em;
+}
+
+footer p {
+    margin: 5px 0;
+}
+
+#contractAddress {
+    font-family: monospace;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .card {
+        padding: 20px;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .volume-label {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .status-message {
+        left: 20px;
+        right: 20px;
+        bottom: 20px;
+    }
+}

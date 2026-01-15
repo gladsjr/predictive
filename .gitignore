@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+
+# Hardhat files
+cache
+artifacts
+typechain-types
+
+# Environment variables
+.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment artifacts (não commitar endereços de contratos locais)
+# frontend/contract-address.json
+# frontend/PredictionMarket.json
