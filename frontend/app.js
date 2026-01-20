@@ -4,12 +4,12 @@ let provider, signer, contract, userAccount, contractAddress, contractABI;
 
 async function init() {
     try {
-        const addressResponse = await fetch('contract-address.json');
+        const addressResponse = await fetch('frontend/contract-address.json');
         const addressData = await addressResponse.json();
         contractAddress = addressData.PredictionMarket;
         document.getElementById('contractAddress').textContent = contractAddress;
 
-        const abiResponse = await fetch('PredictionMarket.json');
+        const abiResponse = await fetch('frontend/PredictionMarket.json');
         const abiData = await abiResponse.json();
         contractABI = abiData.abi;
 
