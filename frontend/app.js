@@ -160,7 +160,23 @@ async function createPrediction(e) {
         const settlementDateInput = document.getElementById('settlementDate').value;
         const betAmountEth = document.getElementById('betAmount').value;
 
-        const settlementDate = Math.floor(new Date(settlementDateInput).getTime() / 1000);
+        if (!settlementDateInput) {
+            showStatus('Informe uma data de apuração válida.', 'error');
+            return;
+        }
+
+        const [datePart, timePart] = settlementDateInput.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hour, minute] = timePart.split(':').map(Number);
+        const settlementDate = Math.floor(
+            new Date(year, month - 1, day, hour, minute, 0).getTime() / 1000
+        );
+
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        if (Number.isNaN(settlementDate) || settlementDate <= nowSeconds + 60) {
+            showStatus('A data de apuração deve ser no futuro.', 'error');
+            return;
+        }
         const betAmount = ethers.parseEther(betAmountEth);
 
         showStatus('Criando predição...', 'info');

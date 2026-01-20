@@ -11,6 +11,7 @@
     "deploy:localhost": "hardhat run scripts/deploy.ts --network localhost",
     "deploy:local": "tsx scripts/deploy-local.ts",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "transfer:sepolia": "hardhat run scripts/transfer-sepolia-eth.ts --network sepolia",
     "frontend": "cd frontend && python -m http.server 8000"
   },
   "repository": {
