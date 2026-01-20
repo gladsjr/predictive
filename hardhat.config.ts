@@ -1,9 +1,15 @@
 import { defineConfig } from "hardhat/config";
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 export default defineConfig({
+  plugins: [hardhatEthers],
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
   solidity: {
     compilers: [
       {
@@ -20,7 +26,12 @@ export default defineConfig({
   networks: {
     hardhat: {
       type: "edr-simulated" as const,
-      chainId: 1337,
+      chainId: 31337,
+    },
+    localhost: {
+      type: "http" as const,
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
     },
     sepolia: {
       type: "http" as const,

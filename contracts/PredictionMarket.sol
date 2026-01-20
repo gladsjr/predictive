@@ -3,224 +3,429 @@ pragma solidity ^0.8.28;
 
 /**
  * @title PredictionMarket
- * @dev Contrato simplificado de mercado de predição descentralizado
- * @notice Permite ao owner criar uma disputa e aos usuários apostarem em YES ou NO
+ * @dev Contrato de mercado de predição com suporte a múltiplas predições simultâneas
  */
 contract PredictionMarket {
     address public owner;
-    uint256 public betAmount; // Valor fixo para cada aposta
-    
+    uint256 private nextPredictionId;
+
     struct Prediction {
+        uint256 id;
         string shortName;
         string description;
         uint256 settlementDate;
+        uint256 betAmount;
         bool isActive;
+        bool bettingOpen; // Nova flag para controlar se apostas estão abertas
         bool isSettled;
-        bool outcome; // true = YES, false = NO
+        bool outcome;
+        uint256 createdAt;
     }
-    
-    Prediction public currentPrediction;
-    
-    // Mapeamento de apostas: endereço => escolha (true = YES, false = NO)
-    mapping(address => bool) public userBets;
-    // Controla se o usuário já apostou
-    mapping(address => bool) public hasBet;
-    
-    // Arrays para rastrear apostadores
-    address[] public yesBettors;
-    address[] public noBettors;
-    
+
+    // Mapping de ID => Predição
+    mapping(uint256 => Prediction) public predictions;
+
+    // Mapping de ID => endereço => aposta
+    mapping(uint256 => mapping(address => bool)) public userBets;
+    mapping(uint256 => mapping(address => bool)) public hasBet;
+
+    // Arrays de apostadores por predição
+    mapping(uint256 => address[]) public yesBettors;
+    mapping(uint256 => address[]) public noBettors;
+
+    // Array de IDs de predições ativas
+    uint256[] public activePredictionIds;
+
     // Eventos
-    event PredictionCreated(string shortName, string description, uint256 settlementDate, uint256 betAmount);
-    event PredictionDeleted(string shortName);
-    event BetPlaced(address indexed bettor, bool choice, uint256 amount);
-    event PredictionSettled(bool outcome, uint256 winnersCount, uint256 prizePerWinner);
-    event RefundIssued(address indexed bettor, uint256 amount);
-    
+    event PredictionCreated(
+        uint256 indexed predictionId,
+        string shortName,
+        string description,
+        uint256 settlementDate,
+        uint256 betAmount
+    );
+    event PredictionDeleted(uint256 indexed predictionId, string shortName);
+    event BettingClosed(uint256 indexed predictionId);
+    event BettingReopened(uint256 indexed predictionId);
+    event BetPlaced(
+        uint256 indexed predictionId,
+        address indexed bettor,
+        bool choice,
+        uint256 amount
+    );
+    event PredictionSettled(
+        uint256 indexed predictionId,
+        bool outcome,
+        uint256 winnersCount,
+        uint256 prizePerWinner
+    );
+    event RefundIssued(
+        uint256 indexed predictionId,
+        address indexed bettor,
+        uint256 amount
+    );
+
     modifier onlyOwner() {
-        require(msg.sender == owner, "Apenas o owner pode executar esta funcao");
+        require(
+            msg.sender == owner,
+            "Apenas o owner pode executar esta funcao"
+        );
         _;
     }
-    
-    modifier predictionActive() {
-        require(currentPrediction.isActive, "Nenhuma predicao ativa no momento");
+
+    modifier predictionExists(uint256 _predictionId) {
+        require(predictions[_predictionId].isActive, "Predicao nao existe");
         _;
     }
-    
-    modifier predictionNotActive() {
-        require(!currentPrediction.isActive, "Ja existe uma predicao ativa");
-        _;
-    }
-    
+
     constructor() {
         owner = msg.sender;
+        nextPredictionId = 1;
     }
-    
+
     /**
      * @dev Cria uma nova predição
-     * @param _shortName Nome curto da predição
-     * @param _description Descrição detalhada
-     * @param _settlementDate Data para apuração (timestamp)
-     * @param _betAmount Valor fixo da aposta em wei
      */
     function createPrediction(
         string memory _shortName,
         string memory _description,
         uint256 _settlementDate,
         uint256 _betAmount
-    ) external onlyOwner predictionNotActive {
+    ) external onlyOwner returns (uint256) {
         require(_betAmount > 0, "Valor da aposta deve ser maior que zero");
-        require(_settlementDate > block.timestamp, "Data de apuracao deve ser no futuro");
-        
-        currentPrediction = Prediction({
+        require(
+            _settlementDate > block.timestamp,
+            "Data de apuracao deve ser no futuro"
+        );
+
+        uint256 predictionId = nextPredictionId++;
+
+        predictions[predictionId] = Prediction({
+            id: predictionId,
             shortName: _shortName,
             description: _description,
             settlementDate: _settlementDate,
+            betAmount: _betAmount,
             isActive: true,
+            bettingOpen: true,
             isSettled: false,
-            outcome: false
+            outcome: false,
+            createdAt: block.timestamp
         });
-        
-        betAmount = _betAmount;
-        
-        emit PredictionCreated(_shortName, _description, _settlementDate, _betAmount);
+
+        activePredictionIds.push(predictionId);
+
+        emit PredictionCreated(
+            predictionId,
+            _shortName,
+            _description,
+            _settlementDate,
+            _betAmount
+        );
+
+        return predictionId;
     }
-    
+
     /**
-     * @dev Deleta a predição atual e devolve todas as apostas
+     * @dev Fecha as apostas para uma predição
      */
-    function deletePrediction() external onlyOwner predictionActive {
-        require(!currentPrediction.isSettled, "Nao pode deletar predicao ja resolvida");
-        
-        string memory predictionName = currentPrediction.shortName;
-        
-        // Devolve todas as apostas YES
-        for (uint256 i = 0; i < yesBettors.length; i++) {
-            address bettor = yesBettors[i];
-            hasBet[bettor] = false;
-            payable(bettor).transfer(betAmount);
-            emit RefundIssued(bettor, betAmount);
-        }
-        
-        // Devolve todas as apostas NO
-        for (uint256 i = 0; i < noBettors.length; i++) {
-            address bettor = noBettors[i];
-            hasBet[bettor] = false;
-            payable(bettor).transfer(betAmount);
-            emit RefundIssued(bettor, betAmount);
-        }
-        
-        // Limpa os arrays
-        delete yesBettors;
-        delete noBettors;
-        
-        // Reseta a predição
-        delete currentPrediction;
-        betAmount = 0;
-        
-        emit PredictionDeleted(predictionName);
+    function closeBetting(
+        uint256 _predictionId
+    ) external onlyOwner predictionExists(_predictionId) {
+        require(
+            !predictions[_predictionId].isSettled,
+            "Predicao ja foi resolvida"
+        );
+        require(
+            predictions[_predictionId].bettingOpen,
+            "Apostas ja estao fechadas"
+        );
+
+        predictions[_predictionId].bettingOpen = false;
+
+        emit BettingClosed(_predictionId);
     }
-    
+
+    /**
+     * @dev Reabre as apostas para uma predição
+     */
+    function reopenBetting(
+        uint256 _predictionId
+    ) external onlyOwner predictionExists(_predictionId) {
+        require(
+            !predictions[_predictionId].isSettled,
+            "Predicao ja foi resolvida"
+        );
+        require(
+            !predictions[_predictionId].bettingOpen,
+            "Apostas ja estao abertas"
+        );
+
+        predictions[_predictionId].bettingOpen = true;
+
+        emit BettingReopened(_predictionId);
+    }
+
+    /**
+     * @dev Deleta uma predição e devolve todas as apostas
+     */
+    function deletePrediction(
+        uint256 _predictionId
+    ) external onlyOwner predictionExists(_predictionId) {
+        require(
+            !predictions[_predictionId].isSettled,
+            "Nao pode deletar predicao ja resolvida"
+        );
+
+        Prediction memory pred = predictions[_predictionId];
+
+        // Devolve todas as apostas YES
+        address[] memory yesAddrs = yesBettors[_predictionId];
+        for (uint256 i = 0; i < yesAddrs.length; i++) {
+            address bettor = yesAddrs[i];
+            hasBet[_predictionId][bettor] = false;
+            payable(bettor).transfer(pred.betAmount);
+            emit RefundIssued(_predictionId, bettor, pred.betAmount);
+        }
+
+        // Devolve todas as apostas NO
+        address[] memory noAddrs = noBettors[_predictionId];
+        for (uint256 i = 0; i < noAddrs.length; i++) {
+            address bettor = noAddrs[i];
+            hasBet[_predictionId][bettor] = false;
+            payable(bettor).transfer(pred.betAmount);
+            emit RefundIssued(_predictionId, bettor, pred.betAmount);
+        }
+
+        // Limpa os arrays
+        delete yesBettors[_predictionId];
+        delete noBettors[_predictionId];
+
+        // Remove da lista de predições ativas
+        _removeFromActiveList(_predictionId);
+
+        // Marca como inativa
+        predictions[_predictionId].isActive = false;
+
+        emit PredictionDeleted(_predictionId, pred.shortName);
+    }
+
     /**
      * @dev Permite que um usuário faça uma aposta
-     * @param _choice true para YES, false para NO
      */
-    function placeBet(bool _choice) external payable predictionActive {
-        require(!currentPrediction.isSettled, "Predicao ja foi resolvida");
-        require(!hasBet[msg.sender], "Voce ja apostou nesta predicao");
-        require(msg.value == betAmount, "Valor da aposta incorreto");
-        
-        userBets[msg.sender] = _choice;
-        hasBet[msg.sender] = true;
-        
+    function placeBet(
+        uint256 _predictionId,
+        bool _choice
+    ) external payable predictionExists(_predictionId) {
+        Prediction memory pred = predictions[_predictionId];
+
+        require(pred.bettingOpen, "Apostas estao fechadas para esta predicao");
+        require(!pred.isSettled, "Predicao ja foi resolvida");
+        require(
+            !hasBet[_predictionId][msg.sender],
+            "Voce ja apostou nesta predicao"
+        );
+        require(msg.value == pred.betAmount, "Valor da aposta incorreto");
+
+        userBets[_predictionId][msg.sender] = _choice;
+        hasBet[_predictionId][msg.sender] = true;
+
         if (_choice) {
-            yesBettors.push(msg.sender);
+            yesBettors[_predictionId].push(msg.sender);
         } else {
-            noBettors.push(msg.sender);
+            noBettors[_predictionId].push(msg.sender);
         }
-        
-        emit BetPlaced(msg.sender, _choice, msg.value);
+
+        emit BetPlaced(_predictionId, msg.sender, _choice, msg.value);
     }
-    
+
     /**
      * @dev Owner define o resultado da predição e distribui prêmios
-     * @param _outcome true para YES, false para NO
      */
-    function settlePrediction(bool _outcome) external onlyOwner predictionActive {
-        require(!currentPrediction.isSettled, "Predicao ja foi resolvida");
-        
-        currentPrediction.isSettled = true;
-        currentPrediction.outcome = _outcome;
-        
-        address[] memory winners = _outcome ? yesBettors : noBettors;
-        uint256 winnersCount = winners.length;
-        
-        if (winnersCount > 0) {
-            uint256 totalPrize = address(this).balance;
-            uint256 prizePerWinner = totalPrize / winnersCount;
-            
-            for (uint256 i = 0; i < winnersCount; i++) {
+    function settlePrediction(
+        uint256 _predictionId,
+        bool _outcome
+    ) external onlyOwner predictionExists(_predictionId) {
+        require(
+            !predictions[_predictionId].isSettled,
+            "Predicao ja foi resolvida"
+        );
+
+        predictions[_predictionId].isSettled = true;
+        predictions[_predictionId].outcome = _outcome;
+        predictions[_predictionId].bettingOpen = false;
+
+        _distributeWinnings(_predictionId, _outcome);
+    }
+
+    /**
+     * @dev Distribui os prêmios aos vencedores (função auxiliar)
+     */
+    function _distributeWinnings(uint256 _predictionId, bool _outcome) private {
+        address[] storage winners = _outcome
+            ? yesBettors[_predictionId]
+            : noBettors[_predictionId];
+
+        if (winners.length > 0) {
+            uint256 totalBets = yesBettors[_predictionId].length +
+                noBettors[_predictionId].length;
+            uint256 totalPrize = totalBets *
+                predictions[_predictionId].betAmount;
+            uint256 prizePerWinner = totalPrize / winners.length;
+
+            for (uint256 i = 0; i < winners.length; i++) {
                 payable(winners[i]).transfer(prizePerWinner);
             }
-            
-            emit PredictionSettled(_outcome, winnersCount, prizePerWinner);
+
+            emit PredictionSettled(
+                _predictionId,
+                _outcome,
+                winners.length,
+                prizePerWinner
+            );
         } else {
-            // Se não há vencedores, devolve o dinheiro aos perdedores
-            address[] memory losers = _outcome ? noBettors : yesBettors;
-            for (uint256 i = 0; i < losers.length; i++) {
-                payable(losers[i]).transfer(betAmount);
-            }
-            
-            emit PredictionSettled(_outcome, 0, 0);
+            _refundLosers(_predictionId, _outcome);
         }
-        
-        // Limpa os arrays após distribuição
-        delete yesBettors;
-        delete noBettors;
     }
-    
+
     /**
-     * @dev Retorna os volumes totais de apostas
-     * @return yesVolume Volume total apostado em YES
-     * @return noVolume Volume total apostado em NO
+     * @dev Reembolsa perdedores quando não há vencedores
      */
-    function getVolumes() external view returns (uint256 yesVolume, uint256 noVolume) {
-        yesVolume = yesBettors.length * betAmount;
-        noVolume = noBettors.length * betAmount;
+    function _refundLosers(uint256 _predictionId, bool _outcome) private {
+        address[] storage losers = _outcome
+            ? noBettors[_predictionId]
+            : yesBettors[_predictionId];
+
+        uint256 refundAmount = predictions[_predictionId].betAmount;
+        for (uint256 i = 0; i < losers.length; i++) {
+            payable(losers[i]).transfer(refundAmount);
+        }
+
+        emit PredictionSettled(_predictionId, _outcome, 0, 0);
     }
-    
+
     /**
-     * @dev Retorna informações da predição atual
+     * @dev Retorna os volumes totais de apostas para uma predição
      */
-    function getCurrentPrediction() external view returns (
-        string memory shortName,
-        string memory description,
-        uint256 settlementDate,
-        bool isActive,
-        bool isSettled,
-        bool outcome,
-        uint256 yesCount,
-        uint256 noCount
-    ) {
+    function getVolumes(
+        uint256 _predictionId
+    )
+        external
+        view
+        predictionExists(_predictionId)
+        returns (uint256 yesVolume, uint256 noVolume)
+    {
+        uint256 betAmountForPrediction = predictions[_predictionId].betAmount;
+        yesVolume = yesBettors[_predictionId].length * betAmountForPrediction;
+        noVolume = noBettors[_predictionId].length * betAmountForPrediction;
+    }
+
+    /**
+     * @dev Retorna informações básicas de uma predição
+     */
+    function getPrediction(
+        uint256 _predictionId
+    )
+        external
+        view
+        predictionExists(_predictionId)
+        returns (
+            uint256 id,
+            string memory shortName,
+            string memory description,
+            uint256 settlementDate,
+            uint256 betAmount,
+            bool isActive,
+            bool bettingOpen,
+            bool isSettled
+        )
+    {
+        Prediction storage p = predictions[_predictionId];
         return (
-            currentPrediction.shortName,
-            currentPrediction.description,
-            currentPrediction.settlementDate,
-            currentPrediction.isActive,
-            currentPrediction.isSettled,
-            currentPrediction.outcome,
-            yesBettors.length,
-            noBettors.length
+            p.id,
+            p.shortName,
+            p.description,
+            p.settlementDate,
+            p.betAmount,
+            p.isActive,
+            p.bettingOpen,
+            p.isSettled
         );
     }
-    
+
     /**
-     * @dev Retorna se o endereço já apostou e sua escolha
+     * @dev Retorna estatísticas de uma predição (outcome e contagens)
      */
-    function getUserBet(address _user) external view returns (bool hasBetPlaced, bool choice) {
-        return (hasBet[_user], userBets[_user]);
+    function getPredictionStats(
+        uint256 _predictionId
+    )
+        external
+        view
+        predictionExists(_predictionId)
+        returns (
+            bool outcome,
+            uint256 yesCount,
+            uint256 noCount,
+            uint256 createdAt
+        )
+    {
+        return (
+            predictions[_predictionId].outcome,
+            yesBettors[_predictionId].length,
+            noBettors[_predictionId].length,
+            predictions[_predictionId].createdAt
+        );
     }
-    
+
+    /**
+     * @dev Retorna todas as predições ativas
+     */
+    function getActivePredictions() external view returns (uint256[] memory) {
+        return activePredictionIds;
+    }
+
+    /**
+     * @dev Retorna se o usuário já apostou e sua escolha
+     */
+    function getUserBet(
+        uint256 _predictionId,
+        address _user
+    ) external view returns (bool hasBetPlaced, bool choice) {
+        return (hasBet[_predictionId][_user], userBets[_predictionId][_user]);
+    }
+
+    /**
+     * @dev Retorna todos os apostadores de uma predição (apenas owner)
+     */
+    function getBettors(
+        uint256 _predictionId
+    )
+        external
+        view
+        onlyOwner
+        predictionExists(_predictionId)
+        returns (
+            address[] memory yesBettorsList,
+            address[] memory noBettorsList
+        )
+    {
+        return (yesBettors[_predictionId], noBettors[_predictionId]);
+    }
+
+    /**
+     * @dev Remove um ID da lista de predições ativas
+     */
+    function _removeFromActiveList(uint256 _predictionId) private {
+        uint256 length = activePredictionIds.length;
+        for (uint256 i = 0; i < length; i++) {
+            if (activePredictionIds[i] == _predictionId) {
+                activePredictionIds[i] = activePredictionIds[length - 1];
+                activePredictionIds.pop();
+                break;
+            }
+        }
+    }
+
     /**
      * @dev Retorna o saldo do contrato
      */
