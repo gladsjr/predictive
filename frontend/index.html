@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mercado de Predição Descentralizado</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -19,116 +21,41 @@
             </div>
         </header>
 
+        <div id="statusMessage" class="status-message"></div>
+
         <!-- Seção Owner -->
         <div id="ownerSection" class="section" style="display: none;">
             <h2>⚙️ Painel do Owner</h2>
-            
-            <!-- Criar Predição -->
             <div class="card">
                 <h3>Criar Nova Predição</h3>
                 <form id="createPredictionForm">
                     <div class="form-group">
-                        <label>Nome Curto:</label>
-                        <input type="text" id="shortName" required placeholder="Ex: Bitcoin $100k?">
+                        <label>Nome Curto</label>
+                        <input type="text" id="shortName" required maxlength="100" placeholder="Ex: Bitcoin $100k?">
                     </div>
                     <div class="form-group">
-                        <label>Descrição:</label>
-                        <textarea id="description" required placeholder="Descrição detalhada da predição"></textarea>
+                        <label>Descrição</label>
+                        <textarea id="description" required rows="3" placeholder="Descreva a predição"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>Data de Apuração:</label>
-                        <input type="datetime-local" id="settlementDate" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data de Apuração</label>
+                            <input type="datetime-local" id="settlementDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor da Aposta (ETH)</label>
+                            <input type="number" id="betAmount" step="0.001" required placeholder="0.1">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Valor da Aposta (ETH):</label>
-                        <input type="number" id="betAmount" step="0.001" required placeholder="0.1">
-                    </div>
-                    <button type="submit" class="btn btn-success">Criar Predição</button>
+                    <button type="submit" class="btn btn-primary">Criar Predição</button>
                 </form>
             </div>
-
-            <!-- Resolver/Deletar Predição -->
-            <div id="ownerControls" style="display: none;">
-                <div class="card">
-                    <h3>Controles da Predição</h3>
-                    <div class="button-group">
-                        <button id="settleYesButton" class="btn btn-success">Resolver como YES</button>
-                        <button id="settleNoButton" class="btn btn-danger">Resolver como NO</button>
-                        <button id="deleteButton" class="btn btn-warning">Deletar Predição</button>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Predição Atual -->
-        <div id="predictionSection" class="section" style="display: none;">
-            <div class="card">
-                <h2>📊 Predição Atual</h2>
-                <div id="predictionInfo">
-                    <h3 id="predictionName"></h3>
-                    <p id="predictionDescription"></p>
-                    <p><strong>Data de Apuração:</strong> <span id="predictionDate"></span></p>
-                    <p><strong>Valor da Aposta:</strong> <span id="predictionBetAmount"></span> ETH</p>
-                    <p id="predictionStatus"></p>
-                </div>
-
-                <!-- Volumes -->
-                <div class="volumes">
-                    <h3>💰 Volumes de Apostas</h3>
-                    <div class="volume-bars">
-                        <div class="volume-item">
-                            <div class="volume-label">
-                                <span class="yes-label">✅ YES</span>
-                                <span id="yesVolume" class="volume-value">0 ETH</span>
-                                <span id="yesCount" class="bet-count">(0 apostas)</span>
-                            </div>
-                            <div class="volume-bar">
-                                <div id="yesBar" class="volume-fill yes"></div>
-                            </div>
-                        </div>
-                        <div class="volume-item">
-                            <div class="volume-label">
-                                <span class="no-label">❌ NO</span>
-                                <span id="noVolume" class="volume-value">0 ETH</span>
-                                <span id="noCount" class="bet-count">(0 apostas)</span>
-                            </div>
-                            <div class="volume-bar">
-                                <div id="noBar" class="volume-fill no"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="total-pool"><strong>Pool Total:</strong> <span id="totalPool">0</span> ETH</p>
-                </div>
-
-                <!-- Fazer Aposta -->
-                <div id="bettingSection" style="display: none;">
-                    <h3>🎲 Fazer sua Aposta</h3>
-                    <div id="userBetInfo" style="display: none;">
-                        <p class="bet-placed">Você já apostou nesta predição: <strong id="userChoice"></strong></p>
-                    </div>
-                    <div id="betButtons" class="button-group">
-                        <button id="betYesButton" class="btn btn-yes">Apostar em YES</button>
-                        <button id="betNoButton" class="btn btn-no">Apostar em NO</button>
-                    </div>
-                </div>
-
-                <!-- Resultado -->
-                <div id="resultSection" style="display: none;">
-                    <h3>🏆 Resultado Final</h3>
-                    <p id="resultText"></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Status -->
-        <div id="statusMessage" class="status-message"></div>
-
-        <!-- Sem Predição -->
-        <div id="noPrediction" class="section" style="display: none;">
-            <div class="card empty-state">
-                <h2>😴 Nenhuma Predição Ativa</h2>
-                <p>Não há predições ativas no momento. Aguarde o owner criar uma nova predição!</p>
-            </div>
+        <!-- Lista de Predições -->
+        <div class="section">
+            <h2>📊 Predições Ativas</h2>
+            <div id="predictionsContainer"></div>
         </div>
     </div>
 
@@ -137,7 +64,7 @@
         <p>Contrato: <span id="contractAddress"></span></p>
     </footer>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
+
 </html>
