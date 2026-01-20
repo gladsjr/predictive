@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mercado de Predição Descentralizado</title>
+    <link rel="stylesheet" href="frontend/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔮 Mercado de Predição Descentralizado</h1>
+            <div id="wallet-info" class="wallet-info">
+                <button id="connectButton" class="btn btn-primary">Conectar MetaMask</button>
+                <div id="accountInfo" style="display: none;">
+                    <p>Conta: <span id="accountAddress"></span></p>
+                    <p>Rede: <span id="networkName"></span></p>
+                </div>
+            </div>
+        </header>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <!-- Seção Owner -->
+        <div id="ownerSection" class="section" style="display: none;">
+            <h2>⚙️ Painel do Owner</h2>
+            <div class="card">
+                <h3>Criar Nova Predição</h3>
+                <form id="createPredictionForm">
+                    <div class="form-group">
+                        <label>Nome Curto</label>
+                        <input type="text" id="shortName" required maxlength="100" placeholder="Ex: Bitcoin $100k?">
+                    </div>
+                    <div class="form-group">
+                        <label>Descrição</label>
+                        <textarea id="description" required rows="3" placeholder="Descreva a predição"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Data de Apuração</label>
+                            <input type="datetime-local" id="settlementDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor da Aposta (ETH)</label>
+                            <input type="number" id="betAmount" step="0.001" required placeholder="0.1">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Criar Predição</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Predições -->
+        <div class="section">
+            <h2>📊 Predições Ativas</h2>
+            <div id="predictionsContainer"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Desenvolvido com ❤️ usando Hardhat e Ethereum</p>
+        <p>Contrato: <span id="contractAddress"></span></p>
+    </footer>
+
+    <script type="module" src="frontend/app.js"></script>
+</body>
+
+</html>
